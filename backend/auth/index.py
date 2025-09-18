@@ -4,7 +4,7 @@ import hashlib
 import jwt
 import datetime
 from typing import Dict, Any, Optional
-import psycopg
+import psycopg2
 
 def escape_sql_string(value: str) -> str:
     '''Экранирование одинарных кавычек для SQL'''
@@ -51,83 +51,88 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         # Подключение к базе данных
-        with psycopg.connect(database_url) as conn:
-            with conn.cursor() as cur:
+        conn = psycopg2.connect(database_url)
+        try:
+            cur = conn.cursor()
+            
+            if method == 'POST':
+                body_data = json.loads(event.get('body', '{}'))
+                action = body_data.get('action')
                 
-                if method == 'POST':
-                    body_data = json.loads(event.get('body', '{}'))
-                    action = body_data.get('action')
-                    
-                    if action == 'register':
-                        return handle_register(cur, conn, body_data, jwt_secret, cors_headers)
-                    elif action == 'login':
-                        return handle_login(cur, body_data, jwt_secret, cors_headers)
-                    elif action == 'verify':
-                        return handle_verify_token(body_data, jwt_secret, cors_headers)
-                    
-                    return {
-                        'statusCode': 400,
-                        'headers': cors_headers,
-                        'body': json.dumps({'error': 'Invalid action'})
-                    }
-                
-                elif method == 'GET':
-                    # Проверка токена из заголовка Authorization
-                    auth_header = event.get('headers', {}).get('authorization', '')
-                    if not auth_header.startswith('Bearer '):
-                        return {
-                            'statusCode': 401,
-                            'headers': cors_headers,
-                            'body': json.dumps({'error': 'Missing or invalid token'})
-                        }
-                    
-                    token = auth_header[7:]  # Remove "Bearer " prefix
-                    
-                    try:
-                        payload = jwt.decode(token, jwt_secret, algorithms=['HS256'])
-                        user_id = payload.get('user_id')
-                        
-                        # Получение данных пользователя
-                        cur.execute(f"SELECT id, email, username FROM users WHERE id = {user_id}")
-                        user = cur.fetchone()
-                        
-                        if not user:
-                            return {
-                                'statusCode': 401,
-                                'headers': cors_headers,
-                                'body': json.dumps({'error': 'User not found'})
-                            }
-                        
-                        return {
-                            'statusCode': 200,
-                            'headers': cors_headers,
-                            'body': json.dumps({
-                                'user': {
-                                    'id': user[0],
-                                    'email': user[1],
-                                    'username': user[2]
-                                }
-                            })
-                        }
-                        
-                    except jwt.ExpiredSignatureError:
-                        return {
-                            'statusCode': 401,
-                            'headers': cors_headers,
-                            'body': json.dumps({'error': 'Token expired'})
-                        }
-                    except jwt.InvalidTokenError:
-                        return {
-                            'statusCode': 401,
-                            'headers': cors_headers,
-                            'body': json.dumps({'error': 'Invalid token'})
-                        }
+                if action == 'register':
+                    return handle_register(cur, conn, body_data, jwt_secret, cors_headers)
+                elif action == 'login':
+                    return handle_login(cur, body_data, jwt_secret, cors_headers)
+                elif action == 'verify':
+                    return handle_verify_token(body_data, jwt_secret, cors_headers)
                 
                 return {
-                    'statusCode': 405,
+                    'statusCode': 400,
                     'headers': cors_headers,
-                    'body': json.dumps({'error': 'Method not allowed'})
+                    'body': json.dumps({'error': 'Invalid action'})
                 }
+            
+            elif method == 'GET':
+                # Проверка токена из заголовка Authorization
+                auth_header = event.get('headers', {}).get('authorization', '')
+                if not auth_header.startswith('Bearer '):
+                    return {
+                        'statusCode': 401,
+                        'headers': cors_headers,
+                        'body': json.dumps({'error': 'Missing or invalid token'})
+                    }
+                
+                token = auth_header[7:]  # Remove "Bearer " prefix
+                
+                try:
+                    payload = jwt.decode(token, jwt_secret, algorithms=['HS256'])
+                    user_id = payload.get('user_id')
+                    
+                    # Получение данных пользователя
+                    cur.execute(f"SELECT id, email, username FROM t_p99956164_routine_planner_app.users WHERE id = {user_id}")
+                    user = cur.fetchone()
+                    
+                    if not user:
+                        return {
+                            'statusCode': 401,
+                            'headers': cors_headers,
+                            'body': json.dumps({'error': 'User not found'})
+                        }
+                    
+                    return {
+                        'statusCode': 200,
+                        'headers': cors_headers,
+                        'body': json.dumps({
+                            'user': {
+                                'id': user[0],
+                                'email': user[1],
+                                'username': user[2]
+                            }
+                        })
+                    }
+                    
+                except jwt.ExpiredSignatureError:
+                    return {
+                        'statusCode': 401,
+                        'headers': cors_headers,
+                        'body': json.dumps({'error': 'Token expired'})
+                    }
+                except jwt.InvalidTokenError:
+                    return {
+                        'statusCode': 401,
+                        'headers': cors_headers,
+                        'body': json.dumps({'error': 'Invalid token'})
+                    }
+            
+            return {
+                'statusCode': 405,
+                'headers': cors_headers,
+                'body': json.dumps({'error': 'Method not allowed'})
+            }
+            
+        finally:
+            cur.close()
+            conn.close()
                 
     except Exception as e:
         return {
@@ -157,7 +162,7 @@ def handle_register(cur, conn, body_data: Dict[str, Any], jwt_secret: str, cors_
         }
     
     # Проверка на существование пользователя
-    cur.execute(f"SELECT id FROM users WHERE email = '{escape_sql_string(email)}'")
+    cur.execute(f"SELECT id FROM t_p99956164_routine_planner_app.users WHERE email = '{escape_sql_string(email)}'")
     if cur.fetchone():
         return {
             'statusCode': 400,
@@ -170,7 +175,7 @@ def handle_register(cur, conn, body_data: Dict[str, Any], jwt_secret: str, cors_
     
     # Создание пользователя
     cur.execute(
-        f"INSERT INTO users (email, password_hash, username) VALUES ('{escape_sql_string(email)}', '{password_hash}', '{escape_sql_string(username)}') RETURNING id"
+        f"INSERT INTO t_p99956164_routine_planner_app.users (email, password_hash, username) VALUES ('{escape_sql_string(email)}', '{password_hash}', '{escape_sql_string(username)}') RETURNING id"
     )
     user_id = cur.fetchone()[0]
     conn.commit()
@@ -210,7 +215,7 @@ def handle_login(cur, body_data: Dict[str, Any], jwt_secret: str, cors_headers: 
         }
     
     # Поиск пользователя
-    cur.execute(f"SELECT id, email, password_hash, username FROM users WHERE email = '{escape_sql_string(email)}'")
+    cur.execute(f"SELECT id, email, password_hash, username FROM t_p99956164_routine_planner_app.users WHERE email = '{escape_sql_string(email)}'")
     user = cur.fetchone()
     
     if not user:
