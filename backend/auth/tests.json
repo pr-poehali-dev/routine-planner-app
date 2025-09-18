@@ -1,0 +1,57 @@
+{
+  "tests": [
+    {
+      "name": "Test registration",
+      "method": "POST",
+      "body": {
+        "action": "register",
+        "email": "test@example.com",
+        "password": "password123",
+        "username": "TestUser"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "message": "string",
+        "token": "string",
+        "user": {
+          "id": "number",
+          "email": "string",
+          "username": "string"
+        }
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test login",
+      "method": "POST",
+      "body": {
+        "action": "login",
+        "email": "test@example.com",
+        "password": "password123"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "string",
+        "token": "string",
+        "user": {
+          "email": "string"
+        }
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test invalid login",
+      "method": "POST",
+      "body": {
+        "action": "login",
+        "email": "test@example.com",
+        "password": "wrongpassword"
+      },
+      "expectedStatus": 401,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

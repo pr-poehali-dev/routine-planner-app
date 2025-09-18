@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
+import AuthForm from '@/components/AuthForm';
 
 interface RoutineAction {
   id: number;
@@ -21,6 +22,8 @@ interface MyHabit extends RoutineAction {
 const Index = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [activeTab, setActiveTab] = useState<'library' | 'my-habits'>('library');
+  const [user, setUser] = useState<any>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
   // Библиотека всех доступных привычек
   const [availableRoutines] = useState<RoutineAction[]>([
@@ -109,11 +112,34 @@ const Index = () => {
     }
   ]);
 
+  // Проверка авторизации при загрузке
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const userData = localStorage.getItem('user');
+    
+    if (token && userData) {
+      setAuthToken(token);
+      setUser(JSON.parse(userData));
+    }
+  }, []);
+
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const handleLogin = (userData: any, token: string) => {
+    setUser(userData);
+    setAuthToken(token);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    setUser(null);
+    setAuthToken(null);
+  };
 
   const addToMyHabits = (routine: RoutineAction) => {
     const newHabit: MyHabit = {
@@ -162,6 +188,11 @@ const Index = () => {
   const totalHabits = myHabits.length;
   const progressPercentage = totalHabits > 0 ? (completedCount / totalHabits) * 100 : 0;
 
+  // Если пользователь не авторизован, показываем форму входа
+  if (!user) {
+    return <AuthForm onLogin={handleLogin} />;
+  }
+
   if (!isMobile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-soft-pink via-lavender to-mint p-8">
@@ -193,9 +224,19 @@ const Index = () => {
       {/* Header with Tabs */}
       <div className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b border-lavender/20">
         <div className="px-4 py-3">
-          <h1 className="text-xl font-bold text-gray-800 text-center mb-3">
-            ✨ Планировщик привычек
-          </h1>
+          <div className="flex justify-between items-center mb-3">
+            <h1 className="text-xl font-bold text-gray-800">
+              ✨ Привет, {user.username}!
+            </h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              <Icon name="LogOut" size={16} />
+            </Button>
+          </div>
           
           {/* Tab Navigation */}
           <div className="flex bg-gray-100 rounded-lg p-1">
