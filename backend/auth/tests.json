@@ -40,6 +40,24 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "Test login by username",
+      "method": "POST",
+      "body": {
+        "action": "login",
+        "email": "TestUser",
+        "password": "password123"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "string",
+        "token": "string",
+        "user": {
+          "username": "string"
+        }
+      },
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Test invalid login",
       "method": "POST",
       "body": {

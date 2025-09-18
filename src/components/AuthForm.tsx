@@ -119,15 +119,15 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLogin }) => {
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                Email
+                {isLogin ? 'Email или имя пользователя' : 'Email'}
               </Label>
               <Input
                 id="email"
                 name="email"
-                type="email"
+                type={isLogin ? "text" : "email"}
                 value={formData.email}
                 onChange={handleInputChange}
-                placeholder="Введите ваш email"
+                placeholder={isLogin ? "Введите email или имя пользователя" : "Введите ваш email"}
                 className="bg-white/80 border-gray-200 focus:border-mint"
                 required
               />

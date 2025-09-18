@@ -161,13 +161,22 @@ def handle_register(cur, conn, body_data: Dict[str, Any], jwt_secret: str, cors_
             'body': json.dumps({'error': 'Password must be at least 6 characters long'})
         }
     
-    # Проверка на существование пользователя
+    # Проверка на существование пользователя по email
     cur.execute(f"SELECT id FROM t_p99956164_routine_planner_app.users WHERE email = '{escape_sql_string(email)}'")
     if cur.fetchone():
         return {
             'statusCode': 400,
             'headers': cors_headers,
-            'body': json.dumps({'error': 'User with this email already exists'})
+            'body': json.dumps({'error': 'Пользователь с таким email уже существует'})
+        }
+    
+    # Проверка на существование пользователя по username
+    cur.execute(f"SELECT id FROM t_p99956164_routine_planner_app.users WHERE username = '{escape_sql_string(username)}'")
+    if cur.fetchone():
+        return {
+            'statusCode': 400,
+            'headers': cors_headers,
+            'body': json.dumps({'error': 'Пользователь с таким именем уже существует'})
         }
     
     # Хеширование пароля
@@ -203,26 +212,31 @@ def handle_register(cur, conn, body_data: Dict[str, Any], jwt_secret: str, cors_
     }
 
 def handle_login(cur, body_data: Dict[str, Any], jwt_secret: str, cors_headers: Dict[str, str]) -> Dict[str, Any]:
-    '''Вход пользователя'''
-    email = body_data.get('email', '').strip().lower()
+    '''Вход пользователя по email или username'''
+    login_field = body_data.get('email', '').strip()  # Теперь может быть email или username
     password = body_data.get('password', '')
     
-    if not email or not password:
+    if not login_field or not password:
         return {
             'statusCode': 400,
             'headers': cors_headers,
-            'body': json.dumps({'error': 'Email and password are required'})
+            'body': json.dumps({'error': 'Логин и пароль обязательны'})
         }
     
-    # Поиск пользователя
-    cur.execute(f"SELECT id, email, password_hash, username FROM t_p99956164_routine_planner_app.users WHERE email = '{escape_sql_string(email)}'")
+    # Поиск пользователя по email или username
+    # Проверяем есть ли @ в строке - если да, то это email
+    if '@' in login_field:
+        cur.execute(f"SELECT id, email, password_hash, username FROM t_p99956164_routine_planner_app.users WHERE email = '{escape_sql_string(login_field.lower())}'")
+    else:
+        cur.execute(f"SELECT id, email, password_hash, username FROM t_p99956164_routine_planner_app.users WHERE username = '{escape_sql_string(login_field)}'")
+    
     user = cur.fetchone()
     
     if not user:
         return {
             'statusCode': 401,
             'headers': cors_headers,
-            'body': json.dumps({'error': 'Invalid email or password'})
+            'body': json.dumps({'error': 'Неверный логин или пароль'})
         }
     
     # Проверка пароля
@@ -231,7 +245,7 @@ def handle_login(cur, body_data: Dict[str, Any], jwt_secret: str, cors_headers: 
         return {
             'statusCode': 401,
             'headers': cors_headers,
-            'body': json.dumps({'error': 'Invalid email or password'})
+            'body': json.dumps({'error': 'Неверный логин или пароль'})
         }
     
     # Создание JWT токена
