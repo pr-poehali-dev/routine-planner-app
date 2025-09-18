@@ -5,13 +5,13 @@ import AppHeader from '@/components/AppHeader';
 import HabitLibrary from '@/components/HabitLibrary';
 import MyHabitsTab from '@/components/MyHabitsTab';
 import { RoutineAction, MyHabit, User } from '@/types';
-import { availableRoutines } from '@/data/routinesData';
 
 const Index = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [activeTab, setActiveTab] = useState<'library' | 'my-habits'>('library');
   const [user, setUser] = useState<User | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [availableRoutines, setAvailableRoutines] = useState<RoutineAction[]>([]);
 
   // Выбранные пользователем привычки
   const [myHabits, setMyHabits] = useState<MyHabit[]>([
@@ -25,6 +25,40 @@ const Index = () => {
       streak: 3
     }
   ]);
+
+  // Загрузка привычек из базы данных
+  useEffect(() => {
+    const fetchHabits = async () => {
+      try {
+        const response = await fetch('https://functions.poehali.dev/f8354253-e2f7-45c6-8409-e7d7af48a148');
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableRoutines(data.habits);
+        }
+      } catch (error) {
+        console.error('Failed to load habits:', error);
+        // Fallback to static data if API fails
+        setAvailableRoutines([
+          {
+            id: 1,
+            title: 'Утренний кофе',
+            description: 'Насладиться ароматным кофе',
+            image: '/img/98fd940d-ad9b-4e4e-bd6d-0da9f913eb39.jpg',
+            category: 'wellness'
+          },
+          {
+            id: 2,
+            title: 'Прогулка',
+            description: 'Пройтись на свежем воздухе',
+            image: '/img/4199bbc4-eada-4e3a-886a-5eef208549c2.jpg',
+            category: 'health'
+          }
+        ]);
+      }
+    };
+
+    fetchHabits();
+  }, []);
 
   // Проверка авторизации при загрузке
   useEffect(() => {

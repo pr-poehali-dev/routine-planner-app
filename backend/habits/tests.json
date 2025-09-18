@@ -1,0 +1,15 @@
+{
+  "tests": [
+    {
+      "name": "Get habits list",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "habits": "array",
+        "total": "number"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
