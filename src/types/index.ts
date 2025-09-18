@@ -4,6 +4,7 @@ export interface RoutineAction {
   description: string;
   image: string;
   category: 'wellness' | 'health' | 'productivity' | 'social';
+  emoji?: string;
 }
 
 export interface MyHabit extends RoutineAction {

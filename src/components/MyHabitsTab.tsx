@@ -90,10 +90,7 @@ const MyHabitsTab: React.FC<MyHabitsTabProps> = ({
                     ) : (
                       <div className={`w-full h-full bg-gradient-to-br ${getCategoryBgColor(habit.category)} flex items-center justify-center`}>
                         <span className="text-2xl">
-                          {habit.id === 7 && '📞'}
-                          {habit.id === 8 && '📋'}
-                          {habit.id === 9 && '🥗'}
-                          {habit.id === 10 && '🙏'}
+                          {habit.emoji || getCategoryEmoji(habit.category)}
                         </span>
                       </div>
                     )}
@@ -104,7 +101,7 @@ const MyHabitsTab: React.FC<MyHabitsTabProps> = ({
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-lg">{getCategoryEmoji(habit.category)}</span>
+                          <span className="text-lg">{habit.emoji || getCategoryEmoji(habit.category)}</span>
                           <h3 className="font-semibold text-gray-800">
                             {habit.title}
                           </h3>

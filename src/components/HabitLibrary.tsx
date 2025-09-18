@@ -45,10 +45,7 @@ const HabitLibrary: React.FC<HabitLibraryProps> = ({
                   ) : (
                     <div className={`w-full h-full bg-gradient-to-br ${getCategoryBgColor(routine.category)} flex items-center justify-center`}>
                       <span className="text-xl">
-                        {routine.id === 7 && '📞'}
-                        {routine.id === 8 && '📋'}
-                        {routine.id === 9 && '🥗'}
-                        {routine.id === 10 && '🙏'}
+                        {routine.emoji || getCategoryEmoji(routine.category)}
                       </span>
                     </div>
                   )}
@@ -59,7 +56,7 @@ const HabitLibrary: React.FC<HabitLibraryProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg">{getCategoryEmoji(routine.category)}</span>
+                        <span className="text-lg">{routine.emoji || getCategoryEmoji(routine.category)}</span>
                         <h3 className="font-semibold text-gray-800 text-sm">
                           {routine.title}
                         </h3>
