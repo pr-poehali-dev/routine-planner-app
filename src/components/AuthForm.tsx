@@ -7,6 +7,7 @@ import Icon from '@/components/ui/icon';
 
 interface AuthFormProps {
   onLogin: (user: any, token: string) => void;
+  onPasswordReset?: () => void;
 }
 
 interface User {
@@ -15,7 +16,7 @@ interface User {
   username: string;
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({ onLogin }) => {
+const AuthForm: React.FC<AuthFormProps> = ({ onLogin, onPasswordReset }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: '',
@@ -175,7 +176,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLogin }) => {
             </Button>
           </form>
 
-          <div className="text-center pt-4 border-t border-gray-200">
+          <div className="text-center pt-4 border-t border-gray-200 space-y-2">
             <p className="text-sm text-gray-600">
               {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}
               <Button
@@ -187,6 +188,19 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLogin }) => {
                 {isLogin ? 'Зарегистрируйтесь' : 'Войдите'}
               </Button>
             </p>
+            
+            {isLogin && onPasswordReset && (
+              <p className="text-sm">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onPasswordReset}
+                  className="p-0 h-auto font-medium text-gray-500 hover:text-gray-700"
+                >
+                  Забыли пароль?
+                </Button>
+              </p>
+            )}
           </div>
 
           <div className="bg-cream/50 rounded-lg p-3 text-center">

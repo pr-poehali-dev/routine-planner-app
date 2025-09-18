@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AuthForm from '@/components/AuthForm';
+import PasswordReset from '@/components/PasswordReset';
 import DesktopMessage from '@/components/DesktopMessage';
 import AppHeader from '@/components/AppHeader';
 import HabitLibrary from '@/components/HabitLibrary';
@@ -12,6 +13,7 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [availableRoutines, setAvailableRoutines] = useState<RoutineAction[]>([]);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
 
   // Выбранные пользователем привычки
   const [myHabits, setMyHabits] = useState<MyHabit[]>([
@@ -116,9 +118,27 @@ const Index = () => {
   const totalHabits = myHabits.length;
   const progressPercentage = totalHabits > 0 ? (completedCount / totalHabits) * 100 : 0;
 
+  // Если показывается восстановление пароля
+  if (showPasswordReset) {
+    return (
+      <PasswordReset
+        onBack={() => setShowPasswordReset(false)}
+        onSuccess={() => {
+          setShowPasswordReset(false);
+          // Можно добавить уведомление об успехе
+        }}
+      />
+    );
+  }
+
   // Если пользователь не авторизован, показываем форму входа
   if (!user) {
-    return <AuthForm onLogin={handleLogin} />;
+    return (
+      <AuthForm 
+        onLogin={handleLogin} 
+        onPasswordReset={() => setShowPasswordReset(true)}
+      />
+    );
   }
 
   // Если не мобильное устройство, показываем сообщение

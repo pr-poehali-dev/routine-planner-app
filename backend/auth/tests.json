@@ -58,6 +58,19 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "Test password reset request",
+      "method": "POST",
+      "body": {
+        "action": "reset_password",
+        "email": "test@example.com"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Test invalid login",
       "method": "POST",
       "body": {

@@ -65,6 +65,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     return handle_login(cur, body_data, jwt_secret, cors_headers)
                 elif action == 'verify':
                     return handle_verify_token(body_data, jwt_secret, cors_headers)
+                elif action == 'reset_password':
+                    return handle_reset_password(cur, conn, body_data, cors_headers)
+                elif action == 'confirm_reset':
+                    return handle_confirm_reset(cur, conn, body_data, cors_headers)
                 
                 return {
                     'statusCode': 400,
@@ -304,3 +308,87 @@ def handle_verify_token(body_data: Dict[str, Any], jwt_secret: str, cors_headers
             'headers': cors_headers,
             'body': json.dumps({'valid': False, 'error': 'Invalid token'})
         }
+
+def handle_reset_password(cur, conn, body_data: Dict[str, Any], cors_headers: Dict[str, str]) -> Dict[str, Any]:
+    '''Запрос на восстановление пароля'''
+    email = body_data.get('email', '').strip().lower()
+    
+    if not email:
+        return {
+            'statusCode': 400,
+            'headers': cors_headers,
+            'body': json.dumps({'error': 'Email обязателен'})
+        }
+    
+    # Проверяем существует ли пользователь с таким email
+    cur.execute(f"SELECT id, username FROM t_p99956164_routine_planner_app.users WHERE email = '{escape_sql_string(email)}'")
+    user = cur.fetchone()
+    
+    if not user:
+        # В целях безопасности не сообщаем, что пользователь не найден
+        return {
+            'statusCode': 200,
+            'headers': cors_headers,
+            'body': json.dumps({'message': 'Если этот email зарегистрирован, вы получите код восстановления'})
+        }
+    
+    # Генерируем 6-значный код восстановления
+    import random
+    reset_code = str(random.randint(100000, 999999))
+    
+    # Сохраняем код в БД (в реальном проекте код должен иметь срок действия)
+    cur.execute(f"UPDATE t_p99956164_routine_planner_app.users SET reset_code = '{reset_code}' WHERE id = {user[0]}")
+    conn.commit()
+    
+    # В реальном проекте здесь бы отправляли email с кодом
+    # Для демонстрации просто возвращаем код (НЕ ДЕЛАЙТЕ ТАК В ПРОДАКШЕНЕ!)
+    return {
+        'statusCode': 200,
+        'headers': cors_headers,
+        'body': json.dumps({
+            'message': 'Код восстановления отправлен на email',
+            'demo_code': reset_code  # Только для демонстрации!
+        })
+    }
+
+def handle_confirm_reset(cur, conn, body_data: Dict[str, Any], cors_headers: Dict[str, str]) -> Dict[str, Any]:
+    '''Подтверждение восстановления пароля с кодом'''
+    email = body_data.get('email', '').strip().lower()
+    reset_code = body_data.get('reset_code', '').strip()
+    new_password = body_data.get('new_password', '')
+    
+    if not email or not reset_code or not new_password:
+        return {
+            'statusCode': 400,
+            'headers': cors_headers,
+            'body': json.dumps({'error': 'Email, код восстановления и новый пароль обязательны'})
+        }
+    
+    if len(new_password) < 6:
+        return {
+            'statusCode': 400,
+            'headers': cors_headers,
+            'body': json.dumps({'error': 'Пароль должен содержать минимум 6 символов'})
+        }
+    
+    # Проверяем код восстановления
+    cur.execute(f"SELECT id, username FROM t_p99956164_routine_planner_app.users WHERE email = '{escape_sql_string(email)}' AND reset_code = '{escape_sql_string(reset_code)}'")
+    user = cur.fetchone()
+    
+    if not user:
+        return {
+            'statusCode': 401,
+            'headers': cors_headers,
+            'body': json.dumps({'error': 'Неверный email или код восстановления'})
+        }
+    
+    # Обновляем пароль и удаляем код восстановления
+    password_hash = hashlib.sha256(new_password.encode()).hexdigest()
+    cur.execute(f"UPDATE t_p99956164_routine_planner_app.users SET password_hash = '{password_hash}', reset_code = NULL WHERE id = {user[0]}")
+    conn.commit()
+    
+    return {
+        'statusCode': 200,
+        'headers': cors_headers,
+        'body': json.dumps({'message': 'Пароль успешно изменен'})
+    }
